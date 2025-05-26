@@ -489,14 +489,15 @@ static void colisiones(void)
             {
                 if(nave.armamento[j].flying)
                 {
-                    double distancia = sqrt(pow(aerolitos[i].posicion.x-nave.armamento[j].posicion.x,2)+pow(aerolitos[i].posicion.y-nave.armamento[j].posicion.y,2));
-                    double distMin= aerolitos[i].radius+nave.armamento[j].radius;
-                    if((distancia<=distMin)*.8f) // && !(nave.destroyed || aerolitos[i].destroyed))
+                    double dx = aerolitos[i].posicion.x-nave.armamento[j].posicion.x;
+                    double dy = aerolitos[i].posicion.y-nave.armamento[j].posicion.y;
+                    double dist2 = dx*dx + dy*dy;
+                    double distMin = aerolitos[i].radius+nave.armamento[j].radius;
+                    double distMin2 = distMin*distMin*0.64; // (0.8)^2
+                    if(dist2 <= distMin2)
                     {
                         asteroidesProyectilColliding[impactosNumber]=i;
-
                         impactosNumber++;
-                        //parteAerolito(i);
                         nave.armamento[j].flying = false;
                     }
                 }
@@ -522,61 +523,50 @@ static void colisiones(void)
     for (int i = 0; i<partida.nAerolitos; i++)
     {
         // Colision Nave-Aerolito
-        double distance = sqrt(pow(nave.posicion.x-aerolitos[i].posicion.x,2)+pow(nave.posicion.y-aerolitos[i].posicion.y,2));
-        double dMin= nave.radius+aerolitos[i].radius;
-        if(distance<=dMin*.85f) // && !(nave.destroyed || aerolitos[i].destroyed))
+        double dx = nave.posicion.x-aerolitos[i].posicion.x;
+        double dy = nave.posicion.y-aerolitos[i].posicion.y;
+        double dist2 = dx*dx + dy*dy;
+        double dMin = nave.radius+aerolitos[i].radius;
+        double dMin2 = dMin*dMin*0.7225; // (0.85)^2
+        if(dist2 <= dMin2)
         {
             nave.destroyed = true;
             asteroidesNaveColliding[choques]=i;
             choques++;
-            // Distance between ball centers
-            float fDistance = sqrtf(pow(nave.posicion.x - aerolitos[i].posicion.x,2)
-                                    + pow(nave.posicion.y - aerolitos[i].posicion.y,2));
-
-            // Calculate displacement required
+            float distance = sqrtf(dist2);
             float fOverlap = 0.5f * (distance - nave.radius - aerolitos[i].radius)*.85f;
-
-            // Displace Current Ball away from collision
-            nave.posicion.x -= fOverlap * (nave.posicion.x - aerolitos[i].posicion.x) / distance;
-            nave.posicion.y -= fOverlap * (nave.posicion.y - aerolitos[i].posicion.y) / distance;
-
-            // Displace Target Ball away from collision
-            aerolitos[i].posicion.x += fOverlap * (nave.posicion.x - aerolitos[i].posicion.x) / distance;
-            aerolitos[i].posicion.y += fOverlap * (nave.posicion.y - aerolitos[i].posicion.y) / distance;
-
+            if(distance > 0.0001f) {
+                nave.posicion.x -= fOverlap * (nave.posicion.x - aerolitos[i].posicion.x) / distance;
+                nave.posicion.y -= fOverlap * (nave.posicion.y - aerolitos[i].posicion.y) / distance;
+                aerolitos[i].posicion.x += fOverlap * (nave.posicion.x - aerolitos[i].posicion.x) / distance;
+                aerolitos[i].posicion.y += fOverlap * (nave.posicion.y - aerolitos[i].posicion.y) / distance;
+            }
         }
         // Colision Aerolito-Aerolito
         for (int j = i+1; j<partida.nAerolitos; j++)
         {
             if (i!=j)
             {
-                distance = sqrt(pow(aerolitos[i].posicion.x-aerolitos[j].posicion.x,2)
-                               +pow(aerolitos[i].posicion.y-aerolitos[j].posicion.y,2));
-                double dMin= aerolitos[i].radius+aerolitos[j].radius;
-                if(distance<=dMin*.7f) // && !(nave.destroyed || aerolitos[i].destroyed))
+                double dx2 = aerolitos[i].posicion.x-aerolitos[j].posicion.x;
+                double dy2 = aerolitos[i].posicion.y-aerolitos[j].posicion.y;
+                double dist2_aj = dx2*dx2 + dy2*dy2;
+                double dMin_aj = aerolitos[i].radius+aerolitos[j].radius;
+                double dMin2_aj = dMin_aj*dMin_aj*0.49; // (0.7)^2
+                if(dist2_aj <= dMin2_aj)
                 {
-                    // Collision has occured
                     pareja par;
                     par.i=i;
                     par.j=j;
                     colisionPairs[colisionsNumber]=par;
                     colisionsNumber++;
-
-                    // Distance between ball centers
-                    float fDistance = sqrtf(pow(aerolitos[i].posicion.x - aerolitos[j].posicion.x,2)
-                                            + pow(aerolitos[i].posicion.y - aerolitos[j].posicion.y,2));
-
-                    // Calculate displacement required
+                    float fDistance = sqrtf(dist2_aj);
                     float fOverlap = 0.5f * (fDistance - aerolitos[i].radius - aerolitos[j].radius)*.4f;
-
-                    // Displace Current Ball away from collision
-                    aerolitos[i].posicion.x -= fOverlap * (aerolitos[i].posicion.x - aerolitos[j].posicion.x) / fDistance;
-                    aerolitos[i].posicion.y -= fOverlap * (aerolitos[i].posicion.y - aerolitos[j].posicion.y) / fDistance;
-
-                    // Displace Target Ball away from collision
-                    aerolitos[j].posicion.x += fOverlap * (aerolitos[i].posicion.x - aerolitos[j].posicion.x) / fDistance;
-                    aerolitos[j].posicion.y += fOverlap * (aerolitos[i].posicion.y - aerolitos[j].posicion.y) / fDistance;
-
+                    if(fDistance > 0.0001f) {
+                        aerolitos[i].posicion.x -= fOverlap * (aerolitos[i].posicion.x - aerolitos[j].posicion.x) / fDistance;
+                        aerolitos[i].posicion.y -= fOverlap * (aerolitos[i].posicion.y - aerolitos[j].posicion.y) / fDistance;
+                        aerolitos[j].posicion.x += fOverlap * (aerolitos[i].posicion.x - aerolitos[j].posicion.x) / fDistance;
+                        aerolitos[j].posicion.y += fOverlap * (aerolitos[i].posicion.y - aerolitos[j].posicion.y) / fDistance;
+                    }
                 }
             }
         }
